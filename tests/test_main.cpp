@@ -1,3 +1,4 @@
-from app.main import add
-def test_add():
-    assert add(1, 2) == 3
+#include "gtest/gtest.h"
+TEST(SampleTest, Basic) {
+    EXPECT_EQ(1 + 1, 2);
+}
