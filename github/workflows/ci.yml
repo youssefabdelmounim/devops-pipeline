@@ -1,49 +1,34 @@
-name: C++ DevOps Pipeline
+stages:
+  - build
+  - test
+  - lint
+  - coverage
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+variables:
+  BUILD_DIR: build/
 
-jobs:
-  build-test-lint-coverage:
-    runs-on: ubuntu-latest
+before_script:
+  - apt update && apt install -y g++ make cppcheck gcovr clang-format python3
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+build:
+  stage: build
+  script:
+    - make
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
+test:
+  stage: test
+  script:
+    - make test
 
-    - name: Install required tools
-      run: |
-        sudo apt update
-        sudo apt install -y g++ make cppcheck gcovr clang-format
+lint:
+  stage: lint
+  script:
+    - bash scripts/lint.sh
 
-    - name: Build C++ project
-      run: |
-        make
-
-    - name: Run tests
-      run: |
-        make test
-
-    - name: Run linter (cppcheck)
-      run: |
-        bash scripts/lint.sh
-
-    - name: Run coverage report
-      run: |
-        python3 scripts/coverage.py
-
-    - name: Upload Coverage Report Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: build/coverage.html
+coverage:
+  stage: coverage
+  script:
+    - python3 scripts/coverage.py
+  artifacts:
+    paths:
+      - ${BUILD_DIR}/coverage.html
