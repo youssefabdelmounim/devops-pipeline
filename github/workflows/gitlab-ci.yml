@@ -1,34 +1,51 @@
 stages:
   - build
-  - test
   - lint
+  - test
   - coverage
 
 variables:
-  BUILD_DIR: build/
+  DEBIAN_FRONTEND: noninteractive
 
-before_script:
-  - apt update && apt install -y g++ make cppcheck gcovr clang-format python3
-
+# Build Stage
 build:
   stage: build
   script:
-    - make
+    - chmod +x scripts/build.sh
+    - ./scripts/build.sh
 
-test:
-  stage: test
-  script:
-    - make test
-
+# Lint Stage
 lint:
   stage: lint
   script:
-    - bash scripts/lint.sh
+    - apt-get update && apt-get install -y cppcheck
+    - chmod +x scripts/lint.sh
+    - ./scripts/lint.sh
 
+# Test Stage (with Google Test install)
+test:
+  stage: test
+  before_script:
+    - apt-get update && apt-get install -y cmake libgtest-dev lcov
+    - cd /usr/src/gtest
+    - cmake .
+    - make
+    - cp lib/*.a /usr/lib
+    - cd $CI_PROJECT_DIR
+  script:
+    - g++ -std=c++11 -o tests/test_main tests/test_main.cpp -lgtest -lgtest_main -pthread -fprofile-arcs -ftest-coverage
+    - ./tests/test_main
+    - find . -name "*.gcda"  # Ensure .gcda files are generated
+
+# Coverage Stage
 coverage:
   stage: coverage
+  before_script:
+    - apt-get update && apt-get install -y lcov
   script:
-    - python3 scripts/coverage.py
-  artifacts:
-    paths:
-      - ${BUILD_DIR}/coverage.html
+    # Collect coverage data
+    - lcov --directory . --capture --output-file coverage.info
+    # Exclude unnecessary files (like test files) from the coverage report
+    - lcov --remove coverage.info 'tests/*' --output-file coverage.info
+    # Generate HTML report (optional)
+    - genhtml coverage.info --output-directory coverage_report
