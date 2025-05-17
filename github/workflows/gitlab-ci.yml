@@ -7,14 +7,14 @@ stages:
 variables:
   DEBIAN_FRONTEND: noninteractive
 
-# Build Stage
+
 build:
   stage: build
   script:
     - chmod +x scripts/build.sh
     - ./scripts/build.sh
 
-# Lint Stage
+
 lint:
   stage: lint
   script:
@@ -22,7 +22,7 @@ lint:
     - chmod +x scripts/lint.sh
     - ./scripts/lint.sh
 
-# Test Stage (with Google Test install)
+
 test:
   stage: test
   before_script:
@@ -35,17 +35,30 @@ test:
   script:
     - g++ -std=c++11 -o tests/test_main tests/test_main.cpp -lgtest -lgtest_main -pthread -fprofile-arcs -ftest-coverage
     - ./tests/test_main
-    - find . -name "*.gcda"  # Ensure .gcda files are generated
+    - find . -name "*.gcda"
+  artifacts:
+    paths:
+      - '**/*.gcda'
+      - '**/*.gcno'
+      - '**/*.cpp'
+      - '**/*.h'
+    when: always
+    expire_in: 1h
 
-# Coverage Stage
+
 coverage:
   stage: coverage
   before_script:
     - apt-get update && apt-get install -y lcov
   script:
-    # Collect coverage data
+    - echo "Checking for coverage files"
+    - find . -name "*.gcno"
+    - find . -name "*.gcda"
     - lcov --directory . --capture --output-file coverage.info
-    # Exclude unnecessary files (like test files) from the coverage report
-    - lcov --remove coverage.info 'tests/*' --output-file coverage.info
-    # Generate HTML report (optional)
+    - lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info
     - genhtml coverage.info --output-directory coverage_report
+  artifacts:
+    paths:
+      - coverage.info
+      - coverage_report/
+    expire_in: 1h
