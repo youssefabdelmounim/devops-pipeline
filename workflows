@@ -1,1 +1,9 @@
 
+sudo apt-get update
+sudo apt-get install -y g++ cmake python3-gcovr lcov libgtest-dev
+
+# The following should build you the googletest libraries 
+cd /usr/src/gtest
+sudo cmake .
+sudo make
+sudo cp lib/*.a /usr/lib
