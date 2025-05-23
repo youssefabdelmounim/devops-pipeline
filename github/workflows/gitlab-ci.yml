@@ -8,6 +8,7 @@ variables:
   DEBIAN_FRONTEND: noninteractive
 
 
+
 build:
   stage: build
   script:
@@ -55,9 +56,12 @@ coverage:
     - find . -name "*.gcda"
     - lcov --directory . --capture --output-file coverage.info
     - lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info
+    - apt-get install -y lcov  # Includes genhtml as part of the lcov package
+    - mkdir -p coverage_report
     - genhtml coverage.info --output-directory coverage_report
   artifacts:
     paths:
       - coverage.info
       - coverage_report/
     expire_in: 1h
+
